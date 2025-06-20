@@ -5,6 +5,7 @@ const xlsx = require('xlsx');
 const path = require('path');
 const db = require('./db');
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -76,24 +77,18 @@ const removeAccents = require('remove-accents');
 
 app.get('/api/products/search', (req, res) => {
   const q = removeAccents(req.query.q || '').toLowerCase();
+  const stmt = db.prepare("SELECT * FROM products");
+  const rows = stmt.all();
 
-  try {
-    const rows = db.prepare("SELECT * FROM products").all();
+  const matched = rows.filter(row => {
+    const name = removeAccents(row.name || '').toLowerCase();
+    const code = (row.code || '').toLowerCase();
+    return name.includes(q) || code.includes(q);
+  });
 
-    const matched = rows.filter(row => {
-      const name = removeAccents(row.name || '').toLowerCase();
-      const code = (row.code || '').toLowerCase();
-      return name.includes(q) || code.includes(q);
-    });
-
-    res.json(matched.slice(0, 10));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  res.json(matched.slice(0, 10));
 });
 
-
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log("Server đang chạy tại cổng", PORT);
 });
