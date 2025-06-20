@@ -5,7 +5,6 @@ const xlsx = require('xlsx');
 const path = require('path');
 const db = require('./db');
 const app = express();
-const PORT = 3000;
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
