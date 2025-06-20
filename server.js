@@ -77,10 +77,9 @@ const removeAccents = require('remove-accents');
 app.get('/api/products/search', (req, res) => {
   const q = removeAccents(req.query.q || '').toLowerCase();
 
-  db.all("SELECT * FROM products", [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
+  try {
+    const rows = db.prepare("SELECT * FROM products").all();
 
-    // Lọc bằng JS thay vì SQL
     const matched = rows.filter(row => {
       const name = removeAccents(row.name || '').toLowerCase();
       const code = (row.code || '').toLowerCase();
@@ -88,8 +87,11 @@ app.get('/api/products/search', (req, res) => {
     });
 
     res.json(matched.slice(0, 10));
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
