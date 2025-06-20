@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Bán Hàng</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: linear-gradient(to right, #74ebd5, #9face6);
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ======= HEADER ======= */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 15px 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-bottom: 2px solid #eee;
+    }
+
+    .header .title {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .header .time {
+      font-size: 16px;
+      color: #333;
+    }
+
+    .header .user-info {
+      font-size: 14px;
+      color: #333;
+    }
+
+    .logout-btn {
+      background: #f44336;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      margin-left: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background: #c62828;
+    }
+
+    /* ======= MAIN LAYOUT ======= */
+    .main {
+      display: flex;
+      padding: 30px;
+      gap: 20px;
+    }
+
+    .left {
+      flex: 3;
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+
+    .right {
+      flex: 1;
+      /* Để trống – bạn sẽ thiết kế sau */
+    }
+
+    /* ======= TÌM KIẾM + NÚT ======= */
+    .search-area {
+      display: flex;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+
+    .search-area input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    .search-area button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .search-area button:hover {
+      background: #388e3c;
+    }
+
+    .section-title {
+      margin-top: 30px;
+      font-weight: bold;
+      font-size: 18px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    }
+
+    .placeholder-box {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 10px;
+      color: #999;
+      text-align: center;
+    }
+  </style>
+
+    <style>
+    #search-box {
+        padding: 10px;
+        font-size: 16px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: white;
+        border: 1px solid #ccc;
+        border-top: none;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        animation: slideDown 0.2s ease-out;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .suggestion-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+
+    .suggestion-item:hover {
+        background: #f0f0f0;
+    }
+
+    .suggestion-item b {
+        display: block;
+    }
+    </style>
+</head>
+<body>
+
+  <!-- ======= HEADER ======= -->
+  <div class="header">
+    <div class="title">Bán hàng</div>
+    <div class="time" id="time">--:--:--</div>
+    <div class="user-info">
+      <span id="username">user</span>
+      <button class="logout-btn" onclick="logout()">Đăng xuất</button>
+    </div>
+  </div>
+
+  <!-- ======= MAIN CONTENT ======= -->
+  <div class="main">
+    <div class="left">
+      <!-- Tìm kiếm + thêm -->
+      <div class="search-area">
+        <div style="position: relative; width: 100%;">
+            <input type="text" id="search-box" placeholder="Tìm sản phẩm..." autocomplete="off" style="width: 100%;" />
+            <div id="suggestions" class="suggestions"></div>
+        </div>
+        <button onclick="addProduct()">+ Thêm sản phẩm</button>
+      </div>
+
+      <!-- Giỏ hàng -->
+        <div style="margin-top: 20px;">
+            <h3>🛒 Giỏ hàng</h3>
+            <ul id="cart-list" style="list-style: none; padding: 0;"></ul>
+            <hr />
+            <div><strong>Tổng cộng: </strong><span id="cart-total">0₫</span></div>
+        </div>
+
+
+      <!-- Sản phẩm bán chạy -->
+      <div>
+        <div class="section-title">Sản phẩm bán chạy</div>
+        <div class="placeholder-box">Chưa có dữ liệu</div>
+      </div>
+    </div>
+
+    <!-- Phần phải (để trống) -->
+    <div class="right"></div>
+  </div>
+
+  <!-- ======= SCRIPT ======= -->
+  <script>
+    // Đăng xuất
+    function logout() {
+      localStorage.removeItem("currentUser");
+      window.location.href = '/logout';
+    }
+    //thêm sp
+    function addProduct() {
+      Swal.fire({
+        icon: 'info',
+        title: 'Chức năng đang phát triển',
+        showConfirmButton: false,
+        timer: 1000
+      });
+    }
+
+    // Hiển thị username
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (user) {
+      document.getElementById("username").textContent = user.username;
+    }
+
+    // Cập nhật đồng hồ thời gian thực
+    function updateTime() {
+      const now = new Date();
+      const formatted = now.toLocaleString('vi-VN');
+      document.getElementById("time").textContent = formatted;
+    }
+    setInterval(updateTime, 1000);
+    updateTime(); // lần đầu
+  </script>
+
+    <script>
+        const searchBox = document.getElementById("search-box");
+        const suggestions = document.getElementById("suggestions");
+
+        searchBox.addEventListener("input", async () => {
+            const q = searchBox.value.trim();
+            if (!q) {
+                suggestions.style.display = "none";
+            return;
+            }
+
+            const res = await fetch(`/api/products/search?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+
+            suggestions.innerHTML = "";
+            data.forEach(p => {
+                const item = document.createElement("div");
+                item.className = "suggestion-item";
+                item.innerHTML = `<b>${p.name}</b><b>${p.price.toLocaleString()}₫</b>`;
+                item.onclick = () => {
+                    addToCart(p);
+                    suggestions.style.display = "none";
+                    searchBox.value = "";
+                };
+                suggestions.appendChild(item);
+            });
+
+            suggestions.style.display = data.length ? "block" : "none";
+        });
+    </script>
+
+    //giỏ hàng
+    <script>
+        let cart = [];
+
+        function addToCart(product) {
+            const existing = cart.find(item => item.code === product.code);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+          const cartList = document.getElementById("cart-list");
+          cartList.innerHTML = "";
+
+          cart.forEach((item, index) => {
+            const li = document.createElement("li");
+            li.style.marginBottom = "10px";
+
+            li.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <b style="flex: 1;">${item.name}</b>
+                <button onclick="decreaseQty(${index})">-</button>
+                <input type="number" value="${item.qty}" min="1" onchange="setQty(${index}, this.value)" style="width: 40px; text-align: center;" onfocus="this.select()" />
+                <button onclick="increaseQty(${index})">+</button>
+                <input type="number" value="${item.customPrice || item.price}" onchange="setCustomPrice(${index}, this.value)" style="width: 80px;" onfocus="this.select()" />
+                <span><b>${((item.customPrice || item.price) * item.qty).toLocaleString()}₫</b></span>
+                <button onclick="removeItem(${index})" style="color: red;">✖</button>
+              </div>
+            `;
+
+            cartList.appendChild(li);
+          });
+
+          const total = cart.reduce((sum, item) => {
+            const price = item.customPrice || item.price;
+            return sum + price * item.qty;
+          }, 0);
+
+          document.getElementById("cart-total").innerText = total.toLocaleString() + "₫";
+        }
+
+        // Hành động
+        function removeItem(index) {
+          cart.splice(index, 1);
+          renderCart();
+        }
+
+        function increaseQty(index) {
+          cart[index].qty++;
+          renderCart();
+        }
+
+        function decreaseQty(index) {
+          if (cart[index].qty > 1) {
+            cart[index].qty--;
+            renderCart();
+          }
+        }
+
+        function setQty(index, value) {
+          const val = parseInt(value);
+          if (val > 0) {
+            cart[index].qty = val;
+            renderCart();
+          }
+        }
+
+        function setCustomPrice(index, value) {
+          const price = parseInt(value);
+          cart[index].customPrice = isNaN(price) ? cart[index].price : price;
+          renderCart();
+        }
+    </script>
+
+
+</body>
+</html>

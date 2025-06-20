@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Trang chính</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: linear-gradient(to right, #74ebd5, #9face6);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+
+    .main-box {
+      background-color: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      width: 320px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px auto;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: #388e3c;
+    }
+
+    .btn.logout {
+      background-color: #f44336;
+    }
+
+    .btn.logout:hover {
+      background-color: #c62828;
+    }
+
+    .credit {
+      margin-top: 20px;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="main-box">
+    <h2>Xin chào <span id="username">user</span></h2>
+    <div id="buttons"></div>
+    <p class="credit">Design by SơnNgu</p>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (!user) {
+      window.location.href = '/login.html';
+    } else {
+      document.getElementById("username").textContent = user.username;
+
+      const buttons = `
+        <button class="btn" onclick="goTo('banhang')">Bán hàng</button>
+        <button class="btn" onclick="goTo('quantri')">Quản trị</button>
+        <button class="btn" onclick="goTo('kho')">Kho</button>
+        <button class="btn logout" onclick="logout()">Đăng xuất</button>
+      `;
+
+      document.getElementById("buttons").innerHTML = buttons;
+    }
+    function logout() {
+      localStorage.removeItem("currentUser"); // Xoá thông tin local
+      window.location.href = '/logout'; // Gọi server xoá session
+    }
+    function goTo(module) {
+      window.location.href = `/${module}.html`;
+      const allowed = {
+        banhang: ['admin', 'sell'],
+        quantri: ['admin'],
+        kho: ['admin', 'kho']
+      };
+
+      const roles = user.roles;
+      const canAccess = allowed[module].some(role => roles.includes(role));
+
+      if (!canAccess) {
+        let roleNames = {
+          banhang: 'admin hoặc sell',
+          quantri: 'admin',
+          kho: 'admin hoặc kho'
+        };
+        Swal.fire({
+          icon: 'warning',
+          title: 'Bạn không có quyền truy cập!',
+          text: `Chỉ ${roleNames[module]} mới có quyền truy cập.`,
+          showConfirmButton: false,
+          timer: 1500
+        });
+        return;
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Đang chuyển đến ' + module,
+        showConfirmButton: false,
+        timer: 1000
+      });
+
+      // Ví dụ: chuyển trang sau đó
+      // window.location.href = `/${module}.html`;
+    }
+  </script>
+</body>
+</html>
