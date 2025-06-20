@@ -1,7 +1,6 @@
 const Database = require('better-sqlite3');
 const db = new Database('./data.db');
 
-// Tạo bảng nếu chưa tồn tại
 db.prepare(`
   CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
