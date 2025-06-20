@@ -19,6 +19,10 @@ function loadUsers() {
 }
 
 // Route trang chủ
+app.get('/', (req, res) => {
+  res.redirect('/login.html'); // hoặc bạn có thể render main.html nếu đã đăng nhập
+});
+
 app.get('/main.html', (req, res) => {
   if (!req.session.user) return res.redirect('/login.html');
 
