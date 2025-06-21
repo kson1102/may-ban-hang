@@ -87,7 +87,7 @@ app.get('/api/products/search', (req, res) => {
   const matched = rows.filter(row => {
     const name = removeAccents(row.name || '').toLowerCase();
     const code = (row.code || '').toLowerCase();
-    return name.includes(q) || code.includes(q);
+    return name.includes(q) || code.startsWith(q);
   });
 
   res.json(matched.slice(0, 10));
@@ -96,4 +96,256 @@ app.get('/api/products/search', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log("Server đang chạy tại cổng", PORT);
 });
+// thêm hàng sp đã bán
+app.get('/api/products/top-sold', (req, res) => {
+  const stmt = db.prepare(`
+    SELECT * FROM products
+    ORDER BY sold DESC
+  `);
+  const rows = stmt.all();
+  res.json(rows);
+});
+// thêm sp
+app.use(express.json());
+app.post('/api/products', (req, res) => {
+  const { name, price, code, location } = req.body;
+  if (!name || isNaN(price)) {
+    return res.status(400).json({ success: false, message: "Thiếu tên hoặc giá." });
+  }
 
+  const stmt = db.prepare(`
+    INSERT INTO products (name, price, code, location, group_name, cost_price, stock, pre_order, sold)
+    VALUES (?, ?, ?, ?, '', 0, 0, 0, 0)
+  `);
+  stmt.run(name, price, code || '', location || '');
+
+  res.json({ success: true });
+});
+
+app.get('/api/customers/search', (req, res) => {
+  const q = (req.query.q || '').trim();
+  const stmt = db.prepare("SELECT * FROM customers");
+  const all = stmt.all();
+
+  const removeAccents = require('remove-accents');
+  const normalizeString = str =>
+    removeAccents(str || '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')        // gộp nhiều khoảng trắng
+      .replace(/^\s+|\s+$/g, '');  // xoá đầu/cuối
+
+  const removeNonDigits = str => str.replace(/[^0-9]/g, '');
+
+  let matched = [];
+
+  if (/^\d/.test(q)) {
+    // Nếu bắt đầu bằng số → tìm theo SĐT đã loại ký tự
+    const cleanQ = removeNonDigits(q);
+    matched = all.filter(c =>
+      removeNonDigits(c.phone || '').includes(cleanQ)
+    );
+  } else {
+    const nq = normalizeString(q);
+    matched = all.filter(c => {
+      const id = (c.id || '').toLowerCase();
+      const name = normalizeString(c.name);
+      return id.includes(nq) || name.includes(nq);
+    });
+  }
+
+  res.json(matched.slice(0, 10));
+});
+
+
+
+app.post('/api/customers', (req, res) => {
+  let { id, name, phone, group } = req.body;
+
+  if (!name || !phone) {
+    return res.status(400).json({ success: false, message: "Thiếu thông tin." });
+  }
+
+  const getDiscount = (groupName) => {
+    const text = (groupName || "").toLowerCase();
+    const values = [];
+    if (text.includes("3%")) values.push(3);
+    if (text.includes("5%")) values.push(5);
+    if (text.includes("vip 15")) values.push(15);
+    else if (text.includes("vip")) values.push(10);
+    return values.length ? Math.max(...values) : 0;
+  };
+
+  id = id || "KH" + Date.now();
+  const discount = getDiscount(group);
+
+  try {
+    db.prepare(`
+      INSERT INTO customers (id, name, phone, group_name, discount_percent, points, total_spent)
+      VALUES (?, ?, ?, ?, ?, 0, 0)
+    `).run(id, name, phone, group || "", discount);
+
+    const newCustomer = { id, name, phone, group_name: group, discount_percent: discount, points: 0, total_spent: 0 };
+    res.json({ success: true, customer: newCustomer });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Không thể thêm khách hàng." });
+  }
+});
+
+app.post('/api/customers/update', (req, res) => {
+  const { id, name, phone, group } = req.body;
+  if (!id || !name || !phone) {
+    return res.status(400).json({ success: false, message: "Thiếu thông tin." });
+  }
+
+  const getDiscount = (groupName) => {
+    const text = (groupName || "").toLowerCase();
+    const values = [];
+    if (text.includes("3%")) values.push(3);
+    if (text.includes("5%")) values.push(5);
+    if (text.includes("vip 15")) values.push(15);
+    else if (text.includes("vip")) values.push(10);
+    return values.length ? Math.max(...values) : 0;
+  };
+
+  const discount = getDiscount(group);
+
+  try {
+    db.prepare(`
+      UPDATE customers SET name=?, phone=?, group_name=?, discount_percent=?
+      WHERE id=?
+    `).run(name, phone, group, discount, id);
+
+    const updated = { id, name, phone, group_name: group, discount_percent: discount };
+    res.json({ success: true, customer: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Không thể cập nhật khách." });
+  }
+});
+
+app.post('/api/orders/pending', (req, res) => {
+  const { customer_name, customer_phone, product_code, product_name } = req.body;
+
+  if (!customer_name || !customer_phone || !product_code || !product_name) {
+    return res.status(400).json({ success: false, message: "Thiếu thông tin đơn đặt." });
+  }
+
+  try {
+    // Lưu vào bảng orders_pending
+    db.prepare(`
+      INSERT INTO orders_pending (customer_name, customer_phone, product_code, product_name)
+      VALUES (?, ?, ?, ?)
+    `).run(customer_name, customer_phone, product_code, product_name);
+
+    // Tăng KH đặt trong bảng products
+    db.prepare(`
+      UPDATE products SET pre_order = pre_order + 1 WHERE code = ?
+    `).run(product_code);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Không thể lưu đơn đặt." });
+  }
+});
+
+app.get('/api/orders/notify', (req, res) => {
+  const stmt = db.prepare(`
+    SELECT o.id, o.customer_name, o.customer_phone, o.product_name
+    FROM orders_pending o
+    JOIN products p ON o.product_code = p.code
+    WHERE p.stock > 0 AND o.notified = 0
+  `);
+  const rows = stmt.all();
+  res.json(rows);
+});
+
+function markNotified(orderId, productName, productCode) {
+  fetch('/api/orders/mark-notified-one', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderId, productCode })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      loadNotifiedOrders();
+    }
+  });
+}
+
+app.post('/api/orders/mark-notified-one', (req, res) => {
+  const { orderId, productCode } = req.body;
+
+  try {
+    db.prepare(`DELETE FROM orders_pending WHERE id = ?`).run(orderId);
+    db.prepare(`UPDATE products SET pre_order = MAX(pre_order - 1, 0) WHERE code = ?`).run(productCode);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Không thể cập nhật." });
+  }
+});
+
+app.post('/api/orders/checkout', (req, res) => {
+  const { customer_id, note, total, items } = req.body;
+
+  try {
+    const customer = customer_id
+      ? db.prepare(`SELECT * FROM customers WHERE id = ?`).get(customer_id)
+      : null;
+
+    const discount = parseFloat(req.body.discount || 0);
+    const type = req.body.discount_type || '%';
+    const discount_value = type === '%' ? Math.round(total * discount / 100) : discount;
+    const final_total = total - discount_value;
+
+    const product_names = items.map(i => i.product_name).join(", ");
+
+    const insert = db.prepare(`
+      INSERT INTO orders (customer_name, customer_phone, product_names, total, discount_value, final_total, note)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const i of items) {
+      // trừ tồn kho (cho phép âm)
+      db.prepare(`UPDATE products SET stock = stock - ? WHERE code = ?`)
+        .run(i.quantity, i.product_code);
+    }
+
+    for (const i of items) {
+      db.prepare(`UPDATE products SET sold = sold + ? WHERE code = ?`)
+        .run(i.quantity, i.product_code);
+    }
+
+    insert.run(
+      customer?.name || null,
+      customer?.phone || null,
+      product_names,
+      total,
+      discount_value,
+      final_total,
+      note
+    );
+
+    // Cập nhật điểm và mức giảm
+    if (customer) {
+      const pointEarned = Math.floor(final_total / 10000);
+      const newPoints = customer.points + pointEarned;
+
+      let newDiscount = 0;
+      if (newPoints >= 10000) newDiscount = 10;
+      else if (newPoints >= 5000) newDiscount = 5;
+      else if (newPoints >= 3000) newDiscount = 3;
+
+      if (newDiscount > customer.discount_percent) {
+        db.prepare(`UPDATE customers SET points = ?, discount_percent = ? WHERE id = ?`)
+          .run(newPoints, newDiscount, customer_id);
+      } else {
+        db.prepare(`UPDATE customers SET points = ? WHERE id = ?`)
+          .run(newPoints, customer_id);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Không thể lưu đơn hàng." });
+  }
+});

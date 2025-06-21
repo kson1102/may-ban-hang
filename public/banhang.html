@@ -150,9 +150,10 @@
     }
 
     .suggestion-item {
-        padding: 10px;
-        cursor: pointer;
-        border-bottom: 1px solid #eee;
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+      line-height: 1.4;
     }
 
     .suggestion-item:hover {
@@ -161,6 +162,122 @@
 
     .suggestion-item b {
         display: block;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      max-height: 280px; /* khoảng 2 hàng */
+      overflow: hidden;
+    }
+
+
+    .product-tile {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      text-align: center;
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .product-tile:hover {
+      transform: translateY(-3px);
+    }
+
+    .product-name {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .product-sold {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .cart-item {
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .cart-item-left {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cart-item input[type="number"] {
+      width: 60px;
+      padding: 4px;
+      text-align: center;
+      font-size: 14px;
+      -moz-appearance: textfield; /* Firefox */
+    }
+
+    .cart-item input[type=number]::-webkit-inner-spin-button,
+    .cart-item input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .cart-total-price {
+      width: 100px;
+      text-align: right;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .right .box {
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+
+    .search-box {
+      padding: 10px;
+      font-size: 14px;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    .add-button {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .add-button:hover {
+      background: #1976D2;
+    }
+
+    .notify-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .notify-item {
+      background: #fff7e6;
+      border: 1px solid #ffe082;
+      padding: 12px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      font-size: 14px;
     }
     </style>
 </head>
@@ -178,34 +295,116 @@
 
   <!-- ======= MAIN CONTENT ======= -->
   <div class="main">
-    <div class="left">
+    <div class="left" style="margin-bottom: 40px;">
       <!-- Tìm kiếm + thêm -->
-      <div class="search-area">
-        <div style="position: relative; width: 100%;">
-            <input type="text" id="search-box" placeholder="Tìm sản phẩm..." autocomplete="off" style="width: 100%;" />
-            <div id="suggestions" class="suggestions"></div>
+      <div class="search-area" style="margin-bottom: 16px;">
+        <div style="position: relative; flex: 1;">
+          <input type="text" id="search-box" placeholder="Tìm sản phẩm..." 
+            autocomplete="off" class="search-box" />
+          <div id="suggestions" class="suggestions"></div>
         </div>
-        <button onclick="addProduct()">+ Thêm sản phẩm</button>
+        <button onclick="addProduct()" class="add-button">+ Thêm</button>
       </div>
+
 
       <!-- Giỏ hàng -->
         <div style="margin-top: 20px;">
             <h3>🛒 Giỏ hàng</h3>
             <ul id="cart-list" style="list-style: none; padding: 0;"></ul>
             <hr />
-            <div><strong>Tổng cộng: </strong><span id="cart-total">0₫</span></div>
+            <div style="margin-top: 12px;">
+              <label for="order-note" style="font-weight: bold; display: block; margin-bottom: 6px;">🗒 Ghi chú đơn hàng:</label>
+              <textarea id="order-note"
+                rows="3"
+                placeholder="Ghi chú đặc biệt nếu có..."
+                style="
+                  display: block;
+                  width: 100%;
+                  max-width: 100%;
+                  padding: 10px;
+                  border-radius: 8px;
+                  border: 1px solid #ccc;
+                  font-size: 14px;
+                  box-sizing: border-box;
+                  resize: vertical;
+                "
+              ></textarea>
+            </div>
         </div>
 
 
       <!-- Sản phẩm bán chạy -->
       <div>
-        <div class="section-title">Sản phẩm bán chạy</div>
-        <div class="placeholder-box">Chưa có dữ liệu</div>
+        <div class="section-title">Sản phẩm bán chạy </div>
+        <div id="top-products" class="product-grid"></div>
       </div>
+
+      <div id="notify-box" style="margin-top: 30px;">
+        <div class="section-title">🔔 Hàng đã có - Khách đã đặt</div>
+        <div id="notify-list" class="notify-grid"></div>
+      </div>
+
     </div>
 
     <!-- Phần phải (để trống) -->
-    <div class="right"></div>
+    <div class="right">
+      <div class="box">
+        <div class="search-area" style="margin-bottom: 16px;">
+          <div style="position: relative; flex: 1;">
+            <input type="text" id="customer-search" placeholder="Tìm khách hàng..." 
+              autocomplete="off" class="search-box" />
+            <div id="customer-suggestions" class="suggestions"></div>
+          </div>
+          <button onclick="addCustomer()" class="add-button">+ Thêm</button>
+        </div>
+
+        <div id="customer-info" style="font-size: 14px; color: #333; margin-top: 8px;"></div>
+
+        <div id="customer-actions" style="margin-top: 10px; display: none;">
+          <button onclick="removeCustomer()" style="margin-right: 8px; background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer;">❌ Xoá khách</button>
+          <button onclick="editCustomer()" style="background: #2196F3; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer;">✏️ Sửa thông tin</button>
+        </div>
+
+        <hr style="margin: 16px 0;" />
+        <div style="font-size: 18px;">
+          <div style="margin-bottom: 8px;">
+            <b>Tổng cộng:</b> <span id="total-amount">0₫</span>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <b>Giảm giá:</b>
+            <div style="display: flex; gap: 8px; margin-top: 4px;">
+              <input id="discount-input" placeholder="Giảm giá" inputmode="numeric"
+                style="flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px;" 
+                onfocus="this.select()" />
+              <select id="discount-type" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px;">
+                <option value="%">%</option>
+                <option value="vnd">₫</option>
+              </select>
+            </div>
+          </div>
+          <div style="font-size: 16px; font-weight: bold; color: #d32f2f;">
+            🧾 Tổng trả: <span id="final-total">0₫</span>
+          </div>
+          <div style="margin-top: 14px;">
+            <button id="place-order-btn" onclick="placeOrder()" 
+              style="width: 100%; padding: 8px 12px; background: #9e9e9e; color: white;
+                    border: none; border-radius: 8px; font-size: 14px; margin-bottom: 16px; display: none;">
+              📝 Đặt hàng
+            </button>
+
+          </div>
+          <div style="margin-top: 10px;">
+            <button id="checkout-button" onclick="checkoutOrder()"
+              style="width: 100%; padding: 14px; background: #ff9800; color: white;
+                    border: none; border-radius: 10px; font-size: 17px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+              💰 Thanh toán (F9)
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ======= SCRIPT ======= -->
@@ -218,10 +417,58 @@
     //thêm sp
     function addProduct() {
       Swal.fire({
-        icon: 'info',
-        title: 'Chức năng đang phát triển',
-        showConfirmButton: false,
-        timer: 1000
+        title: 'Thêm sản phẩm mới',
+        html: `
+          <input id="p-name" class="swal2-input" placeholder="Tên sản phẩm" autocomplete="off" />
+          <input id="p-price" class="swal2-input" placeholder="Giá bán" type="number" />
+          <input id="p-code" class="swal2-input" placeholder="Mã hàng (tuỳ chọn)" />
+          <input id="p-location" class="swal2-input" placeholder="Vị trí (tuỳ chọn)" />
+        `,
+        confirmButtonText: 'Thêm',
+        showCancelButton: true,
+        didOpen: () => {
+          setTimeout(() => {
+            document.getElementById('p-name')?.focus();
+          }, 100);
+        },
+        preConfirm: () => {
+          const name = document.getElementById('p-name').value.trim();
+          const price = parseInt(document.getElementById('p-price').value);
+          const code = document.getElementById('p-code').value.trim();
+          const location = document.getElementById('p-location').value.trim();
+
+          if (!name || isNaN(price)) {
+            Swal.showValidationMessage("Vui lòng nhập tên và giá sản phẩm hợp lệ.");
+            return false;
+          }
+
+          return { name, price, code, location };
+        }
+      }).then(result => {
+        if (result.isConfirmed && result.value) {
+          fetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(result.value)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire({
+                icon: 'success',
+                title: '✅ Đã thêm!',
+                showConfirmButton: false,
+                timer: 1000,
+                timerProgressBar: true
+              });
+            } else {
+              Swal.fire('❌ Lỗi khi thêm', data.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+          })
+          .catch(() => {
+            Swal.fire('❌ Không kết nối được máy chủ', '', 'error');
+          });
+        }
       });
     }
 
@@ -241,114 +488,624 @@
     updateTime(); // lần đầu
   </script>
 
-    <script>
-        const searchBox = document.getElementById("search-box");
-        const suggestions = document.getElementById("suggestions");
+  <script>
+      const searchBox = document.getElementById("search-box");
+      const suggestions = document.getElementById("suggestions");
 
-        searchBox.addEventListener("input", async () => {
-            const q = searchBox.value.trim();
-            if (!q) {
+      searchBox.addEventListener("input", async () => {
+          const q = searchBox.value.trim();
+          if (!q) {
+              suggestions.style.display = "none";
+          return;
+          }
+
+          const res = await fetch(`/api/products/search?q=${encodeURIComponent(q)}`);
+          const data = await res.json();
+
+          suggestions.innerHTML = "";
+          data.forEach(p => {
+              const item = document.createElement("div");
+              item.className = "suggestion-item";
+              item.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <b>${p.name}</b><br>
+                    <b>${p.price.toLocaleString()}₫</b>
+                  </div>
+                  <span style="font-size: 13px; color: #888;">${p.code}</span>
+                </div>
+              `;
+              item.onclick = () => {
+                // 1. Ẩn gợi ý ngay lập tức
+                suggestions.innerHTML = "";
                 suggestions.style.display = "none";
-            return;
-            }
 
-            const res = await fetch(`/api/products/search?q=${encodeURIComponent(q)}`);
-            const data = await res.json();
+                // 2. Reset input (ngay cả khi thêm nhanh)
+                searchBox.value = "";
+                searchBox.blur(); // tránh giữ focus nếu dán nhiều lần
 
-            suggestions.innerHTML = "";
-            data.forEach(p => {
-                const item = document.createElement("div");
-                item.className = "suggestion-item";
-                item.innerHTML = `<b>${p.name}</b><b>${p.price.toLocaleString()}₫</b>`;
-                item.onclick = () => {
-                    addToCart(p);
-                    suggestions.style.display = "none";
-                    searchBox.value = "";
-                };
-                suggestions.appendChild(item);
-            });
+                // 3. Thêm sản phẩm duy nhất
+                addToCart(p);
+              };
 
-            suggestions.style.display = data.length ? "block" : "none";
-        });
-    </script>
-    
-    <script>
-        let cart = [];
-
-        function addToCart(product) {
-            const existing = cart.find(item => item.code === product.code);
-            if (existing) {
-                existing.qty += 1;
-            } else {
-                cart.push({ ...product, qty: 1 });
-            }
-            renderCart();
-        }
-
-        function renderCart() {
-          const cartList = document.getElementById("cart-list");
-          cartList.innerHTML = "";
-
-          cart.forEach((item, index) => {
-            const li = document.createElement("li");
-            li.style.marginBottom = "10px";
-
-            li.innerHTML = `
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <b style="flex: 1;">${item.name}</b>
-                <button onclick="decreaseQty(${index})">-</button>
-                <input type="number" value="${item.qty}" min="1" onchange="setQty(${index}, this.value)" style="width: 40px; text-align: center;" onfocus="this.select()" />
-                <button onclick="increaseQty(${index})">+</button>
-                <input type="number" value="${item.customPrice || item.price}" onchange="setCustomPrice(${index}, this.value)" style="width: 80px;" onfocus="this.select()" />
-                <span><b>${((item.customPrice || item.price) * item.qty).toLocaleString()}₫</b></span>
-                <button onclick="removeItem(${index})" style="color: red;">✖</button>
-              </div>
-            `;
-
-            cartList.appendChild(li);
+              suggestions.appendChild(item);
           });
 
-          const total = cart.reduce((sum, item) => {
-            const price = item.customPrice || item.price;
-            return sum + price * item.qty;
-          }, 0);
+          suggestions.style.display = data.length ? "block" : "none";
+      });
+  </script>
+    
+  <script>
+    let cart = [];
 
-          document.getElementById("cart-total").innerText = total.toLocaleString() + "₫";
+    function addToCart(product) {
+        const existing = cart.find(item => item.code === product.code);
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            cart.push({ ...product, qty: 1 });
         }
+        renderCart();
+    }
 
-        // Hành động
-        function removeItem(index) {
-          cart.splice(index, 1);
-          renderCart();
-        }
+    function renderCart() {
+      const cartList = document.getElementById("cart-list");
+      cartList.innerHTML = "";
 
-        function increaseQty(index) {
-          cart[index].qty++;
-          renderCart();
-        }
+      cart.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.className = "cart-item";
+        li.innerHTML = `
+          <div class="cart-item-left">
+            <b style="flex: 1;">${item.name}</b>
+            <button onclick="decreaseQty(${index})">-</button>
+            <input type="number" value="${item.qty}" min="1" onchange="setQty(${index}, this.value)" onfocus="this.select()" />
+            <button onclick="increaseQty(${index})">+</button>
+            <input type="number" value="${item.customPrice || item.price}" onchange="setCustomPrice(${index}, this.value)" onfocus="this.select()" />
+          </div>
+          <div class="cart-total-price">${((item.customPrice || item.price) * item.qty).toLocaleString()}₫</div>
+          <button onclick="removeItem(${index})" style="color: red;">✖</button>
+        `;
 
-        function decreaseQty(index) {
-          if (cart[index].qty > 1) {
-            cart[index].qty--;
-            renderCart();
+        cartList.appendChild(li);
+      });
+
+      const total = cart.reduce((sum, item) => {
+        const price = item.customPrice || item.price;
+        return sum + price * item.qty;
+      }, 0);
+
+      document.getElementById("cart-total").innerText = total.toLocaleString() + "₫";
+      updateTotals();
+      const btn = document.getElementById("checkout-button");
+      if (btn) btn.onclick = checkoutOrder;
+    }
+
+    // Hành động
+    function removeItem(index) {
+      cart.splice(index, 1);
+      renderCart();
+    }
+
+    function increaseQty(index) {
+      cart[index].qty++;
+      renderCart();
+    }
+
+    function decreaseQty(index) {
+      if (cart[index].qty > 1) {
+        cart[index].qty--;
+        renderCart();
+      }
+    }
+
+    function setQty(index, value) {
+      const val = parseInt(value);
+      if (val > 0) {
+        cart[index].qty = val;
+        renderCart();
+      }
+    }
+
+    function setCustomPrice(index, value) {
+      const price = parseInt(value);
+      cart[index].customPrice = isNaN(price) ? cart[index].price : price;
+      renderCart();
+    }
+  </script>
+  <script>
+    async function loadTopProducts() {
+      const res = await fetch("/api/products/top-sold");
+      const products = await res.json();
+      const container = document.getElementById("top-products");
+
+      if (products.length === 0) {
+        container.innerHTML = '<div class="placeholder-box">Chưa có dữ liệu</div>';
+        return;
+      }
+
+      container.innerHTML = "";
+      products.forEach(p => {
+        const tile = document.createElement("div");
+        tile.className = "product-tile";
+        tile.innerHTML = `
+          <div class="product-name">${p.name}</div>
+          <div class="product-sold">Đã bán: ${p.sold}</div>
+        `;
+        tile.onclick = () => addToCart(p);
+        container.appendChild(tile);
+      });
+    }
+    loadTopProducts();
+  </script>
+
+  <script>
+    const customerInput = document.getElementById("customer-search");
+    const customerSuggestions = document.getElementById("customer-suggestions");
+    let selectedCustomer = null;
+
+    customerInput.addEventListener("input", async () => {
+      const q = customerInput.value.trim();
+      if (!q) {
+        customerSuggestions.style.display = "none";
+        return;
+      }
+
+      const res = await fetch(`/api/customers/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+
+      customerSuggestions.innerHTML = "";
+      data.forEach(c => {
+        const item = document.createElement("div");
+        item.className = "suggestion-item";
+        item.innerHTML = `<b>${c.name}</b><b>${c.phone}</b>`;
+        item.onclick = () => {
+          selectCustomer(c); // gọi đúng hàm chọn
+          customerSuggestions.style.display = "none";
+          customerInput.value = "";
+        };
+        customerSuggestions.appendChild(item);
+      });
+
+      customerSuggestions.style.display = data.length ? "block" : "none";
+    });
+
+    function selectCustomer(cust) {
+      selectedCustomer = cust;
+
+      document.getElementById("customer-info").innerHTML = `
+        <div><b>Mã KH:</b> ${cust.id}</div>
+        <div><b>Họ tên:</b> ${cust.name}</div>
+        <div><b>Số điện thoại:</b> ${cust.phone || '-'}</div>
+        <div><b>Điểm:</b> ${cust.points}</div>
+      `;
+
+      document.getElementById("customer-actions").style.display = "block";
+
+      document.getElementById("discount-input").value = cust.discount_percent || 0;
+      document.getElementById("discount-type").value = '%';
+      updateTotals();
+      document.getElementById("place-order-btn").style.display = "block";
+    }
+
+
+    function addCustomer() {
+      const phoneInSearch = document.getElementById("customer-search").value.trim();
+      const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+      const isAdmin = (currentUser.roles || []).includes("admin");
+
+      Swal.fire({
+        title: 'Thêm khách hàng mới',
+        html: `
+          <input id="kh-id" class="swal2-input" placeholder="Mã khách (tuỳ chọn)" />
+          <input id="kh-name" class="swal2-input" placeholder="Tên khách hàng" autofocus />
+          <input id="kh-phone" class="swal2-input" placeholder="Số điện thoại" value="${phoneInSearch}" />
+          <select id="kh-group" class="swal2-select">
+            <option value="">0% - Không giảm</option>
+            <option value="khuyến mãi nhóm KH 3%">3% - Khuyến mãi nhóm KH 3%</option>
+            <option value="khuyến mãi nhóm KH 5%">5% - Khuyến mãi nhóm KH 5%</option>
+            <option value="Khách Vip">10% - Khách VIP</option>
+            <option value="VL-VIP 15">15% - VL-VIP 15</option>
+          </select>
+          <div id="admin-warning" style="color: red; font-size: 13px; display: none; margin-top: 5px;">
+            ⚠️ Chỉ admin mới có thể chọn 15%
+          </div>
+        `,
+        confirmButtonText: 'Lưu',
+        showCancelButton: true,
+        didOpen: () => {
+          document.getElementById("kh-name").focus();
+
+          const groupSelect = document.getElementById("kh-group");
+          groupSelect.addEventListener("change", () => {
+            const value = groupSelect.value;
+            const warning = document.getElementById("admin-warning");
+            if (value.includes("15") && !isAdmin) {
+              warning.style.display = "block";
+            } else {
+              warning.style.display = "none";
+            }
+          });
+        },
+        preConfirm: () => {
+          const id = document.getElementById("kh-id").value.trim();
+          const name = document.getElementById("kh-name").value.trim();
+          const phone = document.getElementById("kh-phone").value.trim();
+          const group = document.getElementById("kh-group").value.trim();
+
+          if (!name || !phone) {
+            Swal.showValidationMessage("Vui lòng nhập tên và số điện thoại.");
+            return false;
           }
-        }
 
-        function setQty(index, value) {
-          const val = parseInt(value);
-          if (val > 0) {
-            cart[index].qty = val;
-            renderCart();
+          if (group.includes("15") && !isAdmin) {
+            Swal.showValidationMessage("Bạn không có quyền chọn nhóm 15%.");
+            return false;
           }
-        }
 
-        function setCustomPrice(index, value) {
-          const price = parseInt(value);
-          cart[index].customPrice = isNaN(price) ? cart[index].price : price;
-          renderCart();
+          return { id, name, phone, group };
         }
-    </script>
+      }).then(result => {
+        if (result.isConfirmed) {
+          fetch('/api/customers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(result.value)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire({
+                icon: 'success',          // hoặc 'info', 'error'
+                title: 'Thêm khách thành công!',
+                showConfirmButton: false,
+                timer: 1000,
+                timerProgressBar: true
+              });
+              // Tự động chọn khách vừa thêm
+              selectCustomer(data.customer);
+            } else {
+              Swal.fire("❌ Lỗi", data.message || "Không thể thêm khách.", "error");
+            }
+          })
+          .catch(() => {
+            Swal.fire("❌ Lỗi kết nối", "Không thể kết nối máy chủ.", "error");
+          });
+        }
+      });
+    }
 
+    function removeCustomer() {
+      selectedCustomer = null;
+      document.getElementById("customer-info").innerHTML = "";
+      document.getElementById("customer-actions").style.display = "none";
+      document.getElementById("discount-input").value = 0;
+      document.getElementById("discount-type").value = "%";
+      document.getElementById("place-order-btn").style.display = "none";
+      updateTotals();
+    }
+
+    function editCustomer() {
+      if (!selectedCustomer) return;
+
+      const cust = selectedCustomer;
+      const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+      const isAdmin = (currentUser.roles || []).includes("admin");
+
+      Swal.fire({
+        title: 'Sửa thông tin khách hàng',
+        html: `
+          <input id="kh-id" class="swal2-input" placeholder="Mã khách hàng" value="${cust.id}" disabled />
+          <input id="kh-name" class="swal2-input" placeholder="Tên khách hàng" value="${cust.name}" />
+          <input id="kh-phone" class="swal2-input" placeholder="Số điện thoại" value="${cust.phone}" />
+          <select id="kh-group" class="swal2-select">
+            <option value="">0% - Không giảm</option>
+            <option value="khuyến mãi nhóm KH 3%">3% - Khuyến mãi nhóm KH 3%</option>
+            <option value="khuyến mãi nhóm KH 5%">5% - Khuyến mãi nhóm KH 5%</option>
+            <option value="Khách Vip">10% - Khách VIP</option>
+            <option value="VL-VIP 15">15% - VL-VIP 15</option>
+          </select>
+          <div id="admin-warning" style="color: red; font-size: 13px; display: none; margin-top: 5px;">
+            ⚠️ Chỉ admin mới có thể chọn 15%
+          </div>
+        `,
+        confirmButtonText: 'Lưu',
+        showCancelButton: true,
+        didOpen: () => {
+          document.getElementById("kh-group").value = cust.group_name || "";
+
+          const groupSelect = document.getElementById("kh-group");
+          groupSelect.addEventListener("change", () => {
+            const value = groupSelect.value;
+            const warning = document.getElementById("admin-warning");
+            if (value.includes("15") && !isAdmin) {
+              warning.style.display = "block";
+            } else {
+              warning.style.display = "none";
+            }
+          });
+        },
+        preConfirm: () => {
+          const name = document.getElementById("kh-name").value.trim();
+          const phone = document.getElementById("kh-phone").value.trim();
+          const group = document.getElementById("kh-group").value.trim();
+
+          if (!name || !phone) {
+            Swal.showValidationMessage("Vui lòng nhập tên và số điện thoại.");
+            return false;
+          }
+
+          if (group.includes("15") && !isAdmin) {
+            Swal.showValidationMessage("Bạn không có quyền chọn nhóm 15%.");
+            return false;
+          }
+
+          return { id: cust.id, name, phone, group };
+        }
+      }).then(result => {
+        if (result.isConfirmed) {
+          fetch('/api/customers/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(result.value)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire({
+                icon: 'success',          // hoặc 'info', 'error'
+                title: 'Sửa thông tin thành công!',
+                showConfirmButton: false,
+                timer: 1000,
+                timerProgressBar: true
+              });
+              selectCustomer(data.customer);
+            } else {
+              Swal.fire("❌ Lỗi", data.message || "Không thể cập nhật khách.", "error");
+            }
+          })
+          .catch(() => {
+            Swal.fire("❌ Lỗi kết nối", "Không thể kết nối máy chủ.", "error");
+          });
+        }
+      });
+    }
+
+  </script>
+
+  <script>
+    function updateTotals() {
+      const total = cart.reduce((sum, item) => {
+        const price = item.customPrice || item.price;
+        return sum + price * item.qty;
+      }, 0);
+
+      document.getElementById("total-amount").innerText = total.toLocaleString() + "₫";
+
+      const inputEl = document.getElementById("discount-input");
+      let rawValue = inputEl.value.trim();
+      let value = parseFloat(rawValue);
+      let type = document.getElementById("discount-type").value;
+
+      if (isNaN(value) || rawValue === "") {
+        value = 0;
+        inputEl.value = ""; // vẫn cho trống, chỉ xử lý logic
+      }
+
+      if (type === '%' && value > 100) {
+        type = 'vnd';
+        document.getElementById("discount-type").value = 'vnd';
+        // giữ nguyên text người nhập
+      }
+
+      let final = total;
+      if (type === '%') final = total * (1 - value / 100);
+      else if (type === 'vnd') final = total - value;
+
+      final = final < 0 ? 0 : final;
+
+      document.getElementById("final-total").innerText = final.toLocaleString() + "₫";
+    }
+
+    // Gắn lại sau mỗi thay đổi giỏ hàng hoặc nhập chiết khấu
+    ["discount-input", "discount-type"].forEach(id => {
+      document.getElementById(id).addEventListener("input", updateTotals);
+    });
+  </script>
+
+  <script>
+    async function loadNotifiedOrders() {
+      const res = await fetch('/api/orders/notify');
+      const data = await res.json();
+
+      const list = document.getElementById("notify-list");
+      const box = document.getElementById("notify-box");
+
+      if (!data.length) {
+        box.style.display = "none";
+        return;
+      }
+
+      box.style.display = "block";
+      list.innerHTML = "";
+
+      data.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "notify-item";
+        div.innerHTML = `
+          <b>${item.customer_name}</b> (${item.customer_phone})<br/>
+          đã đặt <b>${item.product_name}</b><br/>
+          ➤ <span style="color:green; font-weight:bold;">Đã có hàng</span>
+          <br/>
+          <button onclick="markNotified(${item.id}, '${item.product_name}', '${item.product_code}')"
+            style="margin-top: 6px; padding: 4px 8px; font-size: 13px; background: #1976D2; color: white; border: none; border-radius: 6px; cursor: pointer;">
+            ✅ Đã thông báo
+          </button>
+        `;
+        list.appendChild(div);
+      });
+    }
+    loadNotifiedOrders();
+
+    function placeOrder() {
+      if (!selectedCustomer) {
+        Swal.fire({
+          icon: 'warning',          // hoặc 'info', 'error'
+          title: 'Chưa có thông tin khách hàng!',
+          showConfirmButton: false,
+          timer: 1000,
+          timerProgressBar: true
+        });
+        return;
+      }
+
+      if (cart.length === 0) {
+        Swal.fire({
+          icon: 'warning',          // hoặc 'info', 'error'
+          title: 'Không có sản phẩm!',
+          showConfirmButton: false,
+          timer: 1000,
+          timerProgressBar: true
+        });
+        return;
+      }
+
+      const promises = cart.map(item => {
+        return fetch('/api/orders/pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_name: selectedCustomer.name,
+            customer_phone: selectedCustomer.phone,
+            product_code: item.code,
+            product_name: item.name
+          })
+        });
+      });
+
+      Promise.all(promises).then(() => {
+        Swal.fire({
+          icon: 'success',          // hoặc 'info', 'error'
+          title: 'Đã thêm đơn đặt hàng!',
+          showConfirmButton: false,
+          timer: 1000,
+          timerProgressBar: true
+        });
+
+        cart = [];
+        selectedCustomer = null;
+
+        document.getElementById("cart-list").innerHTML = "";
+        document.getElementById("cart-total").innerText = "0₫";
+        document.getElementById("final-total").innerText = "0₫";
+        document.getElementById("total-amount").innerText = "0₫";
+        document.getElementById("discount-input").value = 0;
+        document.getElementById("discount-type").value = "%";
+        document.getElementById("customer-info").innerHTML = "";
+        document.getElementById("customer-actions").style.display = "none";
+
+        updateTotals();
+        loadNotifiedOrders(); // load lại nếu có sản phẩm có hàng
+
+      });
+    }
+
+    function markNotified(orderId, productName, productCode) {
+      fetch('/api/orders/mark-notified-one', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, productCode })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          loadNotifiedOrders();
+        }
+      });
+    }
+
+  </script>
+
+  <script>
+    let orderNote = "";
+    document.getElementById("order-note").addEventListener("input", (e) => {
+      orderNote = e.target.value;
+    });
+  </script>
+
+  <script>
+    function checkoutOrder() {
+      if (cart.length === 0) {
+        Swal.fire({
+          icon: 'warning',          // hoặc 'info', 'error'
+          title: 'Giỏ hàng trống!',
+          showConfirmButton: false,
+          timer: 1000,
+          timerProgressBar: true
+        });
+        return;
+      }
+
+      const total = cart.reduce((sum, item) => {
+        const price = item.customPrice || item.price;
+        return sum + price * item.qty;
+      }, 0);
+
+      const discount = parseFloat(document.getElementById("discount-input").value) || 0;
+      const type = document.getElementById("discount-type").value;
+      const final = type === "%" ? total * (1 - discount / 100) : total - discount;
+
+      const data = {
+        customer_id: selectedCustomer ? selectedCustomer.id : null,
+        note: orderNote,
+        total: Math.round(total),
+        discount: discount,
+        discount_type: type,
+        items: cart.map(item => ({
+          product_code: item.code,
+          product_name: item.name,
+          quantity: item.qty,
+          price: item.customPrice || item.price
+        }))
+      };
+
+      fetch('/api/orders/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(res => res.json()).then(result => {
+        if (result.success) {
+          Swal.fire({
+            icon: 'success',          // hoặc 'info', 'error'
+            title: 'Hoàn thành đơn hàng!',
+            showConfirmButton: false,
+            timer: 1000,
+            timerProgressBar: true
+          });
+          cart = [];
+          selectedCustomer = null;
+          document.getElementById("cart-list").innerHTML = "";
+          document.getElementById("cart-total").innerText = "0₫";
+          document.getElementById("final-total").innerText = "0₫";
+          document.getElementById("total-amount").innerText = "0₫";
+          document.getElementById("discount-input").value = 0;
+          document.getElementById("discount-type").value = "%";
+          document.getElementById("customer-info").innerHTML = "";
+          document.getElementById("customer-actions").style.display = "none";
+          document.getElementById("order-note").value = "";
+          updateTotals();
+          loadNotifiedOrders();
+        }
+      });
+      loadTopProducts(); // gọi lại sau thanh toán thành công
+    }
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "F9") {
+        e.preventDefault();
+        document.getElementById("checkout-button").click();
+      }
+    });
+  </script>
 
 </body>
 </html>

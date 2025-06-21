@@ -24,7 +24,6 @@ const rows = db.prepare("SELECT * FROM products").all();
 
   // Ghi đè file hoặc tạo backup theo ngày
   const now = new Date();
-  const fileName = `khanhhang_${now.toISOString().split('T')[0]}.xlsx`;
+  const fileName = `sanpham_${now.toISOString().split('T')[0]}.xlsx`;
   xlsx.writeFile(workbook, fileName);
   console.log(`✅ Dữ liệu đã được xuất ra file ${fileName}`);
-});

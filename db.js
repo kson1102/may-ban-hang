@@ -12,8 +12,33 @@ db.exec(`
     cost_price INTEGER,
     stock INTEGER,
     pre_order INTEGER,
-    location TEXT
+    location TEXT,
+    sold INTEGER DEFAULT 0
+  )
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS orders_pending (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_name TEXT,
+    customer_phone TEXT,
+    product_code TEXT,
+    product_name TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    notified INTEGER DEFAULT 0
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT,
+      customer_phone TEXT,
+      product_names TEXT,
+      total INTEGER,
+      discount_value INTEGER,
+      final_total INTEGER,
+      note TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 module.exports = db;

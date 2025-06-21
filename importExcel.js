@@ -3,14 +3,14 @@ const xlsx = require('xlsx');
 const db = new Database('./data.db');
 
 // Đọc Excel
-const workbook = xlsx.readFile('./khanhhang.xlsx');
+const workbook = xlsx.readFile('./sanpham.xlsx');
 const sheet = workbook.Sheets[workbook.SheetNames[0]];
 const data = xlsx.utils.sheet_to_json(sheet); // ✅ ĐÂY là phần bị thiếu
 
 // Chuẩn bị insert
 const insert = db.prepare(`
-  INSERT INTO products (group_name, code, name, price, cost_price, stock, pre_order, location)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO products (group_name, code, name, price, cost_price, stock, pre_order, location, sold)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 const insertMany = db.transaction((products) => {
@@ -23,7 +23,7 @@ const insertMany = db.transaction((products) => {
       p["Giá Vốn"] || 0,
       p["Tồn kho"] || 0,
       p["KH đặt"] || 0,
-      p["Vị trí"] || ""
+      p["Vị trí"] || "", 0
     );
   }
 });
