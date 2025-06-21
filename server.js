@@ -123,38 +123,15 @@ app.post('/api/products', (req, res) => {
 });
 
 app.get('/api/customers/search', (req, res) => {
-  const q = (req.query.q || '').trim();
-  const stmt = db.prepare("SELECT * FROM customers");
-  const all = stmt.all();
-
-  const removeAccents = require('remove-accents');
-  const normalizeString = str =>
-    removeAccents(str || '')
-      .toLowerCase()
-      .replace(/\s+/g, ' ')        // gộp nhiều khoảng trắng
-      .replace(/^\s+|\s+$/g, '');  // xoá đầu/cuối
-
-  const removeNonDigits = str => str.replace(/[^0-9]/g, '');
-
-  let matched = [];
-
-  if (/^\d/.test(q)) {
-    // Nếu bắt đầu bằng số → tìm theo SĐT đã loại ký tự
-    const cleanQ = removeNonDigits(q);
-    matched = all.filter(c =>
-      removeNonDigits(c.phone || '').includes(cleanQ)
-    );
-  } else {
-    const nq = normalizeString(q);
-    matched = all.filter(c => {
-      const id = (c.id || '').toLowerCase();
-      const name = normalizeString(c.name);
-      return id.includes(nq) || name.includes(nq);
-    });
-  }
-
-  res.json(matched.slice(0, 10));
+  const q = `%${(req.query.q || '').toLowerCase()}%`;
+  const rows = db.prepare(`
+    SELECT * FROM customers
+    WHERE LOWER(name) LIKE ? OR LOWER(id) LIKE ? OR phone LIKE ?
+    LIMIT 10
+  `).all(q, q, q);
+  res.json(rows);
 });
+
 
 
 
@@ -257,20 +234,6 @@ app.get('/api/orders/notify', (req, res) => {
   const rows = stmt.all();
   res.json(rows);
 });
-
-function markNotified(orderId, productName, productCode) {
-  fetch('/api/orders/mark-notified-one', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ orderId, productCode })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      loadNotifiedOrders();
-    }
-  });
-}
 
 app.post('/api/orders/mark-notified-one', (req, res) => {
   const { orderId, productCode } = req.body;
