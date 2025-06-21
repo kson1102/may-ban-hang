@@ -41,4 +41,14 @@ db.exec(`
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT,
+    roles TEXT -- dạng chuỗi: "admin,sell,kho"
+  )
+`);
+
 module.exports = db;

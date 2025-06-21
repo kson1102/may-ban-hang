@@ -279,6 +279,20 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
       font-size: 14px;
     }
+    .main-btn {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      margin-left: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .main-btn:hover {
+      background: #1976D2;
+    }
+
     </style>
 </head>
 <body>
@@ -290,6 +304,7 @@
     <div class="user-info">
       <span id="username">user</span>
       <button class="logout-btn" onclick="logout()">Đăng xuất</button>
+      <button class="main-btn" onclick="goToMain()">Trang chính</button>
     </div>
   </div>
 
@@ -615,8 +630,6 @@
         const price = item.customPrice || item.price;
         return sum + price * item.qty;
       }, 0);
-
-      document.getElementById("cart-total").innerText = total.toLocaleString() + "₫";
       updateTotals();
       const btn = document.getElementById("checkout-button");
       if (btn) btn.onclick = checkoutOrder;
@@ -1049,22 +1062,13 @@
           timer: 1000,
           timerProgressBar: true
         });
-
         cart = [];
-        selectedCustomer = null;
-
         document.getElementById("cart-list").innerHTML = "";
-        document.getElementById("cart-total").innerText = "0₫";
-        document.getElementById("final-total").innerText = "0₫";
-        document.getElementById("total-amount").innerText = "0₫";
-        document.getElementById("discount-input").value = 0;
-        document.getElementById("discount-type").value = "%";
-        document.getElementById("customer-info").innerHTML = "";
-        document.getElementById("customer-actions").style.display = "none";
-
+        document.getElementById("order-note").value = "";
+        removeCustomer(); // ✅ Xoá toàn bộ thông tin khách hàng, giảm giá
         updateTotals();
-        loadNotifiedOrders(); // load lại nếu có sản phẩm có hàng
-
+        loadNotifiedOrders();
+        loadTopProducts();
       });
     }
 
@@ -1141,21 +1145,14 @@
             timerProgressBar: true
           });
           cart = [];
-          selectedCustomer = null;
           document.getElementById("cart-list").innerHTML = "";
-          document.getElementById("cart-total").innerText = "0₫";
-          document.getElementById("final-total").innerText = "0₫";
-          document.getElementById("total-amount").innerText = "0₫";
-          document.getElementById("discount-input").value = 0;
-          document.getElementById("discount-type").value = "%";
-          document.getElementById("customer-info").innerHTML = "";
-          document.getElementById("customer-actions").style.display = "none";
           document.getElementById("order-note").value = "";
+          removeCustomer(); // ✅ Xoá toàn bộ thông tin khách hàng, giảm giá
           updateTotals();
           loadNotifiedOrders();
+          loadTopProducts();
         }
       });
-      loadTopProducts(); // gọi lại sau thanh toán thành công
     }
     document.addEventListener("keydown", function(e) {
       if (e.key === "F9") {
@@ -1169,7 +1166,9 @@
     function cleanPhone(input) {
       return input.replace(/[.\s\-()]/g, '');
     }
-
+    function goToMain() {
+      window.location.href = "/main.html";
+    }
   </script>
 
 </body>

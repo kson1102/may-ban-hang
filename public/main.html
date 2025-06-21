@@ -92,7 +92,6 @@
       window.location.href = '/logout'; // Gọi server xoá session
     }
     function goTo(module) {
-      window.location.href = `/${module}.html`;
       const allowed = {
         banhang: ['admin', 'sell'],
         quantri: ['admin'],
@@ -118,10 +117,10 @@
         return;
       }
 
-      console.log("chuyển trang");
-      // Ví dụ: chuyển trang sau đó
-      // window.location.href = `/${module}.html`;
+      // ✅ CHỈ chuyển trang nếu có quyền
+      window.location.href = `/${module}.html`;
     }
+
   </script>
 </body>
 </html>

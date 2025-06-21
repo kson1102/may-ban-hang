@@ -7,15 +7,21 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({ secret: 'secret', resave: false, saveUninitialized: true }));
+app.use((req, res, next) => {
+  next();
+});
 
-// Đọc user từ file Excel
-function loadUsers() {
-  const workbook = xlsx.readFile('users.xlsx');
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  return xlsx.utils.sheet_to_json(sheet);
+
+function requireAnyRole(...roles) {
+  return function(req, res, next) {
+    const user = req.session.user;
+    if (!user || !roles.some(r => user.roles.includes(r))) {
+      return res.redirect('/main.html');
+    }
+    next();
+  };
 }
 
 // Route trang chủ
@@ -32,27 +38,28 @@ app.get('/main.html', (req, res) => {
 // Xử lý đăng nhập
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  const users = loadUsers();
 
-  const found = users.find(u => u.username === username && u.password === password);
-  if (found) {
+  const user = db.prepare("SELECT * FROM users WHERE username = ? AND password = ?").get(username, password);
+
+  if (user) {
     req.session.user = {
-        username: found.username,
-        roles: found.roles.split(',').map(r => r.trim())
+      username: user.username,
+      roles: user.roles.split(',').map(r => r.trim())
     };
 
     const userJS = JSON.stringify(req.session.user);
 
     res.send(`
-        <script>
-            localStorage.setItem("currentUser", ${JSON.stringify(userJS)});
-            window.location.href = '/main.html';
-        </script>
+      <script>
+        localStorage.setItem("currentUser", ${JSON.stringify(userJS)});
+        window.location.href = '/main.html';
+      </script>
     `);
   } else {
     res.redirect('/login.html?error=true');
   }
 });
+
 
 // Đăng xuất
 app.get('/logout', (req, res) => {
@@ -66,14 +73,11 @@ app.get('/logout', (req, res) => {
 });
 
 //Trang bán hàng
-app.get('/banhang.html', (req, res) => {
-  if (!req.session.user) return res.redirect('/login.html');
+app.get('/banhang.html', requireAnyRole('sell', 'admin'), (req, res) => {
   res.sendFile(__dirname + '/public/banhang.html');
 });
 
 //Tìm kiếm sp
-const removeAccents = require('remove-accents');
-
 app.get('/api/products/search', (req, res) => {
   const rawQ = (req.query.q || '').trim().toLowerCase();
   if (!rawQ) return res.json([]);
@@ -323,14 +327,32 @@ app.post('/api/orders/checkout', (req, res) => {
   }
 });
 
-
-
-
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log("Server đang chạy tại cổng", PORT);
+// Trang quản trị
+app.get('/quantri.html', requireAnyRole('admin'), (req, res) => {
+  res.sendFile(__dirname + '/public/quantri.html');
 });
 
-app.listen(PORT, () => {
-  console.log(`Server chạy tại http://localhost:${PORT}`);
+app.get('/api/stats/day', (req, res) => {
+  const date = req.query.date || new Date().toISOString().split('T')[0];
+  const start = `${date} 00:00:00`;
+  const end = `${date} 23:59:59`;
+
+  const rows = db.prepare(`
+    SELECT * FROM orders
+    WHERE created_at BETWEEN ? AND ?
+  `).all(start, end);
+
+  const count = rows.length;
+  const total = rows.reduce((sum, r) => sum + r.total, 0);
+  const discount = rows.reduce((sum, r) => sum + r.discount_value, 0);
+  const final = rows.reduce((sum, r) => sum + r.final_total, 0);
+
+  res.json({ count, total, discount, final });
+});
+
+
+
+app.use(express.static('public'));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server đang chạy tại http://0.0.0.0:${PORT}`);
 });

@@ -2,9 +2,13 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Quản trị</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Quản Trị</title>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+
   <style>
     body {
       font-family: 'Quicksand', sans-serif;
@@ -52,64 +56,112 @@
       background: #c62828;
     }
 
-    .main {
+    .dashboard {
       padding: 30px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(900px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(850px, 1fr));
       gap: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .dashboard {
+        grid-template-columns: 1fr !important; /* 1 box trên mỗi hàng trên điện thoại */
+      }
     }
 
     .box {
       background: white;
+      border-radius: 16px;
       padding: 20px;
-      border-radius: 12px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-      font-size: 16px;
+      text-align: left;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .main-btn {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      margin-left: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      }
+
+      .main-btn:hover {
+      background: #1976D2;
+    }
+
+    .header .user-info {
+      font-size: 14px;
+      color: #333;
+    }
+
+    .date-picker {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+      width: 140px;
+      box-sizing: border-box;
     }
   </style>
+  <script>
+    // Kiểm tra quyền truy cập
+    const role = localStorage.getItem('role');
+    if (role !== 'admin') {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Bạn không có quyền truy cập',
+        timer: 2000,
+        showConfirmButton: false
+      }).then(() => {
+        window.location.href = 'main.html';
+      });
+    }
+  </script>
 </head>
 <body>
-
-  <!-- ======= HEADER ADMIN ======= -->
   <div class="header">
-    <div class="title">Quản trị</div>
+    <div class="title">Trang quản trị</div>
     <div class="time" id="time">--:--:--</div>
     <div class="user-info">
       <span id="username">user</span>
       <button class="logout-btn" onclick="logout()">Đăng xuất</button>
+      <button class="main-btn" onclick="goToMain()">Trang chính</button>
     </div>
   </div>
 
-  <!-- ======= MAIN CONTENT ======= -->
-  <div class="main">
-    <!-- Box: Doanh thu hôm nay -->
+  <div class="dashboard">
     <div class="box">
-      <h3>💰 Doanh thu hôm nay</h3>
-      <div class="stats-row">
-        <div class="stats-label">Số đơn hàng:</div>
-        <div class="stats-value" id="order-count">--</div>
+      <!-- Trong .box doanh thu ngày -->
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <label for="date-input" style="white-space: nowrap;">Doanh thu ngày:</label>
+        <input type="text" id="date-input" class="date-picker" placeholder="dd/mm/yyyy" />
       </div>
-      <div class="stats-row">
-        <div class="stats-label">Tổng tiền:</div>
-        <div class="stats-value" id="total-amount">--₫</div>
-      </div>
-      <div class="stats-row">
-        <div class="stats-label">Chiết khấu:</div>
-        <div class="stats-value" id="total-discount">--₫</div>
-      </div>
-      <div class="stats-row">
-        <div class="stats-label">Thực nhận:</div>
-        <div class="stats-value" id="net-total">--₫</div>
-      </div>
+
+      <div>🧾 Số đơn hàng: <span style="color: black;" id="order-count">--</span></div>
+      <div>💰 Tổng tiền: <span style="color: black;" id="total-amount">--</span></div>
+      <div>🔻 Chiết khấu: <span style="color: red;" id="total-discount">--</span></div>
+      <div>✅ Thực nhận: <span style="color: #2e7d32;" id="final-total">--</span></div>
     </div>
 
-    <div class="box">📊 Box 2</div>
-    <div class="box">📁 Box 3</div>
-    <div class="box">⚙️ Box 4</div>
+    <div class="box">Doanh thu tháng</div>
+    <div class="box">Quản lý khách hàng</div>
+    <div class="box">Quản lý kho</div>
+    <div class="box">Quản lý nhân viên</div>
   </div>
 
   <script>
-    // Hiển thị username
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+    function goToMain() {
+      window.location.href = "/main.html";
+    }
+
     const user = JSON.parse(localStorage.getItem("currentUser"));
     if (user) {
       document.getElementById("username").textContent = user.username;
@@ -122,55 +174,43 @@
       document.getElementById("time").textContent = formatted;
     }
     setInterval(updateTime, 1000);
-    updateTime();
-
-    // Đăng xuất
-    function logout() {
-      localStorage.removeItem("currentUser");
-      window.location.href = '/logout';
-    }
+    updateTime(); // lần đầu
   </script>
-  
+
   <script>
-    async function loadRevenueStats() {
-      const res = await fetch('/api/stats/today');
-      const data = await res.json();
-
-      document.getElementById("total-orders").textContent = data.total_orders;
-      document.getElementById("total-amount").textContent = data.total_amount.toLocaleString() + '₫';
-      document.getElementById("total-discount").textContent = data.total_discount.toLocaleString() + '₫';
-      document.getElementById("net-revenue").textContent = data.net_revenue.toLocaleString() + '₫';
-
-      const ctx = document.getElementById('revenueChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Thực nhận', 'Chiết khấu'],
-          datasets: [{
-            data: [data.net_revenue, data.total_discount],
-            backgroundColor: ['#4CAF50', '#FFC107'],
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom'
-            },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => ctx.label + ': ' + ctx.parsed.toLocaleString() + '₫'
-              }
-            }
-          }
-        }
-      });
+    function formatVND(n) {
+      return (+n).toLocaleString('vi-VN') + '₫';
     }
 
-    loadRevenueStats();
+    function fetchDailyStats(date) {
+      fetch(`/api/stats/day?date=${date}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("order-count").textContent = data.count;
+          document.getElementById("total-amount").textContent = formatVND(data.total);
+          document.getElementById("total-discount").textContent = formatVND(data.discount);
+          document.getElementById("final-total").textContent = formatVND(data.final);
+        });
+    }
   </script>
 
+  <script>
+    flatpickr("#date-input", {
+      locale: "vn",
+      dateFormat: "d/m/Y",
+      defaultDate: new Date(),
+      onChange: function(selectedDates) {
+        const selected = selectedDates[0];
+        const iso = selected.toISOString().split('T')[0];
+        fetchDailyStats(iso);
+      }
+    });
 
+    // Lần đầu: gọi đúng ngày hôm nay
+    const today = new Date();
+    const defaultFormatted = today.toISOString().split('T')[0];
+    fetchDailyStats(defaultFormatted);
+  </script>
 
 </body>
 </html>
