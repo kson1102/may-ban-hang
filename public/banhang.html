@@ -352,7 +352,7 @@
         <div class="search-area" style="margin-bottom: 16px;">
           <div style="position: relative; flex: 1;">
             <input type="text" id="customer-search" placeholder="Tìm khách hàng..." 
-              autocomplete="off" class="search-box" />
+              autocomplete="off" class="search-box"  />
             <div id="customer-suggestions" class="suggestions"></div>
           </div>
           <button onclick="addCustomer()" class="add-button">+ Thêm</button>
@@ -493,46 +493,87 @@
       const suggestions = document.getElementById("suggestions");
 
       searchBox.addEventListener("input", async () => {
-          const q = searchBox.value.trim();
-          if (!q) {
-              suggestions.style.display = "none";
-          return;
-          }
+        const q = searchBox.value.trim();
+        if (!q) {
+            suggestions.style.display = "none";
+        return;
+        }
 
-          const res = await fetch(`/api/products/search?q=${encodeURIComponent(q)}`);
-          const data = await res.json();
+        const res = await fetch(`/api/products/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
 
-          suggestions.innerHTML = "";
-          data.forEach(p => {
-              const item = document.createElement("div");
-              item.className = "suggestion-item";
-              item.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <b>${p.name}</b><br>
-                    <b>${p.price.toLocaleString()}₫</b>
-                  </div>
-                  <span style="font-size: 13px; color: #888;">${p.code}</span>
-                </div>
-              `;
-              item.onclick = () => {
-                // 1. Ẩn gợi ý ngay lập tức
-                suggestions.innerHTML = "";
-                suggestions.style.display = "none";
+        suggestions.innerHTML = "";
+        data.forEach(p => {
+          const item = document.createElement("div");
+          item.className = "suggestion-item";
+          item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <b>${p.name}</b><br>
+                <b>${p.price.toLocaleString()}₫</b>
+              </div>
+              <span style="font-size: 13px; color: #888;">${p.code}</span>
+            </div>
+          `;
+          item.onclick = () => {
+            // 1. Ẩn gợi ý ngay lập tức
+            suggestions.innerHTML = "";
+            suggestions.style.display = "none";
 
-                // 2. Reset input (ngay cả khi thêm nhanh)
-                searchBox.value = "";
-                searchBox.blur(); // tránh giữ focus nếu dán nhiều lần
+            // 2. Reset input (ngay cả khi thêm nhanh)
+            searchBox.value = "";
+            searchBox.blur(); // tránh giữ focus nếu dán nhiều lần
 
-                // 3. Thêm sản phẩm duy nhất
-                addToCart(p);
-              };
+            // 3. Thêm sản phẩm duy nhất
+            addToCart(p);
+          };
 
-              suggestions.appendChild(item);
-          });
+          suggestions.appendChild(item);
+        });
 
-          suggestions.style.display = data.length ? "block" : "none";
+        suggestions.style.display = data.length ? "block" : "none";
       });
+
+      let selectedIndex = -1;
+      let lastSelectedProduct = null;
+
+      searchBox.addEventListener("keydown", (e) => {
+        const items = suggestions.querySelectorAll(".suggestion-item");
+        if (!items.length) return;
+
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          selectedIndex = (selectedIndex + 1) % items.length;
+          updateSuggestionHighlight(items);
+        }
+
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+          updateSuggestionHighlight(items);
+        }
+
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < items.length) {
+            items[selectedIndex].click(); // gọi luôn onclick cũ
+          } else if (lastSelectedProduct) {
+            addToCart(lastSelectedProduct); // Enter nhiều lần = tăng SL
+          }
+        }
+      });
+
+      function updateSuggestionHighlight(items) {
+        items.forEach((item, index) => {
+          item.style.background = index === selectedIndex ? "#e0f7fa" : "";
+        });
+
+        // Gợi ý hiện tại → nhớ lại sản phẩm để tăng SL
+        if (selectedIndex >= 0 && selectedIndex < items.length) {
+          lastSelectedProduct = items[selectedIndex].__product;
+        }
+      }
+
   </script>
     
   <script>
@@ -658,7 +699,12 @@
       data.forEach(c => {
         const item = document.createElement("div");
         item.className = "suggestion-item";
-        item.innerHTML = `<b>${c.name}</b><b>${c.phone}</b>`;
+        item.innerHTML = `
+          <div style="display: flex; justify-content: space-between;">
+            <div><b>${c.name}</b><br/><small>${c.phone}</small></div>
+            <div style="text-align: right;"><b>${c.discount_percent || 0}%</b></div>
+          </div>
+        `;
         item.onclick = () => {
           selectCustomer(c); // gọi đúng hàm chọn
           customerSuggestions.style.display = "none";
@@ -669,6 +715,10 @@
 
       customerSuggestions.style.display = data.length ? "block" : "none";
     });
+    customerInput.addEventListener("focus", () => {
+      customerInput.select();
+    });
+
 
     function selectCustomer(cust) {
       selectedCustomer = cust;
@@ -688,6 +738,14 @@
       document.getElementById("place-order-btn").style.display = "block";
     }
 
+      document.addEventListener("click", (e) => {
+        ["search-box", "suggestions", "customer-search", "customer-suggestions"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el && !el.contains(e.target)) {
+            if (id.includes("suggestions")) el.style.display = "none";
+          }
+        });
+      });
 
     function addCustomer() {
       const phoneInSearch = document.getElementById("customer-search").value.trim();

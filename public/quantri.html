@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Quản trị</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
   <style>
     body {
@@ -81,7 +82,27 @@
 
   <!-- ======= MAIN CONTENT ======= -->
   <div class="main">
-    <div class="box">📦 Box 1</div>
+    <!-- Box: Doanh thu hôm nay -->
+    <div class="box">
+      <h3>💰 Doanh thu hôm nay</h3>
+      <div class="stats-row">
+        <div class="stats-label">Số đơn hàng:</div>
+        <div class="stats-value" id="order-count">--</div>
+      </div>
+      <div class="stats-row">
+        <div class="stats-label">Tổng tiền:</div>
+        <div class="stats-value" id="total-amount">--₫</div>
+      </div>
+      <div class="stats-row">
+        <div class="stats-label">Chiết khấu:</div>
+        <div class="stats-value" id="total-discount">--₫</div>
+      </div>
+      <div class="stats-row">
+        <div class="stats-label">Thực nhận:</div>
+        <div class="stats-value" id="net-total">--₫</div>
+      </div>
+    </div>
+
     <div class="box">📊 Box 2</div>
     <div class="box">📁 Box 3</div>
     <div class="box">⚙️ Box 4</div>
@@ -109,6 +130,47 @@
       window.location.href = '/logout';
     }
   </script>
+  
+  <script>
+    async function loadRevenueStats() {
+      const res = await fetch('/api/stats/today');
+      const data = await res.json();
+
+      document.getElementById("total-orders").textContent = data.total_orders;
+      document.getElementById("total-amount").textContent = data.total_amount.toLocaleString() + '₫';
+      document.getElementById("total-discount").textContent = data.total_discount.toLocaleString() + '₫';
+      document.getElementById("net-revenue").textContent = data.net_revenue.toLocaleString() + '₫';
+
+      const ctx = document.getElementById('revenueChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Thực nhận', 'Chiết khấu'],
+          datasets: [{
+            data: [data.net_revenue, data.total_discount],
+            backgroundColor: ['#4CAF50', '#FFC107'],
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ctx.label + ': ' + ctx.parsed.toLocaleString() + '₫'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    loadRevenueStats();
+  </script>
+
+
 
 </body>
 </html>

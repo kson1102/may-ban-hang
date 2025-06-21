@@ -71,31 +71,22 @@ app.get('/banhang.html', (req, res) => {
   res.sendFile(__dirname + '/public/banhang.html');
 });
 
-
-app.listen(PORT, () => {
-  console.log(`Server chạy tại http://localhost:${PORT}`);
-});
-
 //Tìm kiếm sp
 const removeAccents = require('remove-accents');
 
 app.get('/api/products/search', (req, res) => {
-  const q = removeAccents(req.query.q || '').toLowerCase();
-  const stmt = db.prepare("SELECT * FROM products");
-  const rows = stmt.all();
+  const rawQ = (req.query.q || '').trim().toLowerCase();
+  if (!rawQ) return res.json([]);
 
-  const matched = rows.filter(row => {
-    const name = removeAccents(row.name || '').toLowerCase();
-    const code = (row.code || '').toLowerCase();
-    return name.includes(q) || code.startsWith(q);
-  });
+  const rows = db.prepare(`
+    SELECT * FROM products
+    WHERE LOWER(name) LIKE ? OR LOWER(code) LIKE ?
+    ORDER BY sold DESC
+  `).all(`%${rawQ}%`, `%${rawQ}%`);
 
-  res.json(matched.slice(0, 10));
+  res.json(rows);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log("Server đang chạy tại cổng", PORT);
-});
 // thêm hàng sp đã bán
 app.get('/api/products/top-sold', (req, res) => {
   const stmt = db.prepare(`
@@ -330,4 +321,16 @@ app.post('/api/orders/checkout', (req, res) => {
     console.error(err);
     res.status(500).json({ success: false, message: "Không thể lưu đơn hàng." });
   }
+});
+
+
+
+
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log("Server đang chạy tại cổng", PORT);
+});
+
+app.listen(PORT, () => {
+  console.log(`Server chạy tại http://localhost:${PORT}`);
 });
