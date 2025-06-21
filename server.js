@@ -123,17 +123,36 @@ app.post('/api/products', (req, res) => {
 });
 
 app.get('/api/customers/search', (req, res) => {
-  const q = `%${(req.query.q || '').toLowerCase()}%`;
-  const rows = db.prepare(`
-    SELECT * FROM customers
-    WHERE LOWER(name) LIKE ? OR LOWER(id) LIKE ? OR phone LIKE ?
-    LIMIT 10
-  `).all(q, q, q);
+  let rawQ = (req.query.q || '').toLowerCase().trim();
+
+  if (!rawQ) return res.json([]);
+
+  let sql;
+  let params;
+
+  if (rawQ.startsWith("0")) {
+    // Nếu tìm bằng số điện thoại → làm sạch
+    const cleaned = rawQ.replace(/[.\s\-()]/g, '');
+    sql = `
+      SELECT * FROM customers
+      WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, '.', ''), '-', ''), ' ', ''), '(', ''), ')', '') LIKE ?
+      LIMIT 10
+    `;
+    params = [`%${cleaned}%`];
+  } else {
+    // Tìm theo tên, mã
+    const q = `%${rawQ}%`;
+    sql = `
+      SELECT * FROM customers
+      WHERE LOWER(name) LIKE ? OR LOWER(id) LIKE ?
+      LIMIT 10
+    `;
+    params = [q, q];
+  }
+
+  const rows = db.prepare(sql).all(...params);
   res.json(rows);
 });
-
-
-
 
 app.post('/api/customers', (req, res) => {
   let { id, name, phone, group } = req.body;
